@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Music Recommendation</title>
+  <style>
+    #recommenderUI { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Music Recommender</h1>
+
+  <div id="recommenderUI">
+    <input type="text" id="songInput" placeholder="Enter a song name" />
+    <button onclick="getRecommendations()">Get Recommendations</button>
+
+    <h3>Recommendations:</h3>
+    <ul id="results"></ul>
+  </div>
+
+  <script>
+    // Optional: hide UI unless "logged in"
+    async function checkLoginStatus() {
+      try {
+        const res = await fetch('/me');
+        if (res.ok) {
+          document.getElementById('recommenderUI').style.display = 'block';
+        }
+      } catch (err) {
+        console.log('User not logged in');
+      }
+    }
+
+    async function getRecommendations() {
+      const songName = document.getElementById('songInput').value.trim();
+      const resultsList = document.getElementById('results');
+      resultsList.innerHTML = '';
+
+      if (!songName) {
+        resultsList.innerHTML = '<li style="color:red;">Please enter a song name.</li>';
+        return;
+      }
+
+      try {
+        resultsList.innerHTML = '<li>Searching for lyrics...</li>';
+
+        const recRes = await fetch('/recommend', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ track_id: songName })  // songName used as 'track_id'
+        });
+
+        const recData = await recRes.json();
+
+        if (!recRes.ok || !recData.recommendations) {
+          throw new Error(recData.error || 'Failed to get recommendations');
+        }
+
+        resultsList.innerHTML = '';
+        recData.recommendations.forEach(song => {
+          const li = document.createElement('li');
+          li.textContent = `${song.track_name || song.title} (score: ${song.score})`;
+          resultsList.appendChild(li);
+        });
+
+      } catch (err) {
+        resultsList.innerHTML = `<li style="color:red;">Error: ${err.message}</li>`;
+      }
+    }
+
+    checkLoginStatus(); // or just call getRecommendations() immediately if login not needed
+  </script>
+</body>
+</html>

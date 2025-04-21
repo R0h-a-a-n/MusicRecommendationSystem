@@ -1,73 +1,314 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Music Recommendation</title>
-  <style>
-    #recommenderUI { display: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Recommendation System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1DB954;  /* Spotify green */
+            --secondary-color: #191414; /* Spotify black */
+            --text-color: #333;
+            --background-color: #f5f5f5;
+            --card-background: #ffffff;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .search-container {
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .search-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-wrapper label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.1);
+        }
+
+        button {
+            padding: 1rem 2rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        button:hover {
+            background-color: #1aa34a;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .recommendations {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .song-card {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .song-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .song-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: var(--secondary-color);
+        }
+
+        .song-card p {
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .song-card .score {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .loading::after {
+            content: "Loading...";
+            display: inline-block;
+            animation: ellipsis 1.4s infinite;
+        }
+
+        @keyframes ellipsis {
+            0% { content: "Loading.  "; }
+            33% { content: "Loading.. "; }
+            66% { content: "Loading..."; }
+        }
+
+        .error {
+            color: #dc3545;
+            text-align: center;
+            padding: 1rem;
+            background: #ffe6e6;
+            border-radius: 8px;
+            margin: 1rem 0;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1.5rem 0;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>Music Recommender</h1>
+    <div class="header">
+        <div class="container">
+            <h1>Music Recommendation System</h1>
+            <p>Discover new music based on your favorite songs</p>
+        </div>
+    </div>
 
-  <div id="recommenderUI">
-    <input type="text" id="songInput" placeholder="Enter a song name" />
-    <button onclick="getRecommendations()">Get Recommendations</button>
+    <div class="container">
+        <div class="search-container">
+            <div class="search-box">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <label for="songInput">Song Name</label>
+                        <input type="text" id="songInput" placeholder="Enter song name..." aria-label="Song name">
+                    </div>
+                    <div class="input-wrapper">
+                        <label for="artistInput">Artist Name</label>
+                        <input type="text" id="artistInput" placeholder="Enter artist name..." aria-label="Artist name">
+                    </div>
+                </div>
+                <button onclick="getRecommendations()">Get Recommendations</button>
+            </div>
+            <div class="error" id="errorMessage"></div>
+            <div class="loading" id="loading"></div>
+        </div>
+        <div class="recommendations" id="recommendationsContainer"></div>
+    </div>
 
-    <h3>Recommendations:</h3>
-    <ul id="results"></ul>
-  </div>
+    <script>
+        async function getRecommendations() {
+            const songInput = document.getElementById('songInput');
+            const artistInput = document.getElementById('artistInput');
+            const loading = document.getElementById('loading');
+            const errorMessage = document.getElementById('errorMessage');
+            const recommendationsContainer = document.getElementById('recommendationsContainer');
+            
+            if (!songInput.value.trim()) {
+                showError('Please enter a song name');
+                return;
+            }
 
-  <script>
-    // Optional: hide UI unless "logged in"
-    async function checkLoginStatus() {
-      try {
-        const res = await fetch('/me');
-        if (res.ok) {
-          document.getElementById('recommenderUI').style.display = 'block';
+            // Combine song and artist for the search query
+            const searchQuery = `${songInput.value.trim()}${artistInput.value.trim() ? ' by ' + artistInput.value.trim() : ''}`;
+
+            loading.style.display = 'block';
+            errorMessage.style.display = 'none';
+            recommendationsContainer.innerHTML = '';
+
+            try {
+                const response = await fetch('/recommend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ track_id: searchQuery })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to get recommendations');
+                }
+
+                displayRecommendations(data.recommendations);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
         }
-      } catch (err) {
-        console.log('User not logged in');
-      }
-    }
 
-    async function getRecommendations() {
-      const songName = document.getElementById('songInput').value.trim();
-      const resultsList = document.getElementById('results');
-      resultsList.innerHTML = '';
+        function displayRecommendations(recommendations) {
+            const container = document.getElementById('recommendationsContainer');
+            container.innerHTML = '';
 
-      if (!songName) {
-        resultsList.innerHTML = '<li style="color:red;">Please enter a song name.</li>';
-        return;
-      }
+            recommendations.forEach(song => {
+                const card = document.createElement('div');
+                card.className = 'song-card';
+                card.innerHTML = `
+                    <h3>${song.track_name}</h3>
+                    <p class="score">Similarity Score: ${(song.score * 100).toFixed(1)}%</p>
+                `;
+                container.appendChild(card);
+            });
+        }
 
-      try {
-        resultsList.innerHTML = '<li>Searching for lyrics...</li>';
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
 
-        const recRes = await fetch('/recommend', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ track_id: songName })  // songName used as 'track_id'
+        // Add enter key support for both inputs
+        document.getElementById('songInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getRecommendations();
+            }
         });
 
-        const recData = await recRes.json();
-
-        if (!recRes.ok || !recData.recommendations) {
-          throw new Error(recData.error || 'Failed to get recommendations');
-        }
-
-        resultsList.innerHTML = '';
-        recData.recommendations.forEach(song => {
-          const li = document.createElement('li');
-          li.textContent = `${song.track_name || song.title} (score: ${song.score})`;
-          resultsList.appendChild(li);
+        document.getElementById('artistInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                getRecommendations();
+            }
         });
-
-      } catch (err) {
-        resultsList.innerHTML = `<li style="color:red;">Error: ${err.message}</li>`;
-      }
-    }
-
-    checkLoginStatus(); // or just call getRecommendations() immediately if login not needed
-  </script>
+    </script>
 </body>
 </html>

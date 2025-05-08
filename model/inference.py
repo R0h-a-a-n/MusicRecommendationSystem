@@ -1,10 +1,3 @@
-"""
-inference.py
-------------
-Loads pre‑computed artefacts from ./cache and exposes
-recommend_similar_songs().
-"""
-
 import os, numpy as np, pandas as pd, joblib
 from sentence_transformers import SentenceTransformer
 import nltk, lyricsgenius
@@ -13,7 +6,6 @@ from bertopic import BERTopic
 from dotenv import load_dotenv
 from sklearn.metrics.pairwise import cosine_similarity
 
-# --- paths ---
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "cache")
 titles    = pd.read_pickle(os.path.join(CACHE_DIR, "titles.pkl"))
 lyr_vec   = np.load(os.path.join(CACHE_DIR, "lyr_vec.npy"))
@@ -39,7 +31,7 @@ def _compose_vector(text:str):
     v_bert = bert.encode([text])[0]
     s      = list(sia.polarity_scores(text).values())
     t      = topic_model.transform([text])[0][0]
-    t      = (t - topic_vec.min()) / (topic_vec.max() - topic_vec.min())  # min‑max normalize w.r.t dataset
+    t      = (t - topic_vec.min()) / (topic_vec.max() - topic_vec.min())  
     return np.concatenate([v_bert, s, [t]])
 
 def recommend_similar_songs(query:str, k:int=5):
@@ -48,33 +40,29 @@ def recommend_similar_songs(query:str, k:int=5):
         raise ValueError("Lyrics not found")
     vec = _compose_vector(lyr)
     vec_red = umap.transform([vec])
-    dists, idx = knn.kneighbors(vec_red, n_neighbors=k+5)  # Get extra neighbors to handle duplicates
+    dists, idx = knn.kneighbors(vec_red, n_neighbors=k+5)  
     
-    # Get the input song name from Genius API to compare
     input_song = genius.search_song(query)
     input_title = input_song.title.lower() if input_song else ""
     
-    # Filter out the input song and normalize scores
     results = []
     min_dist = min(dists[0])
     max_dist = max(dists[0])
     
     for j, i in enumerate(idx[0]):
         title = titles[i].lower()
-        # Skip if it's too similar to input song (likely the same song)
         if input_title and (input_title in title or title in input_title):
             continue
             
-        # Normalize distance to similarity score between 0.6 and 0.95
         if max_dist == min_dist:
-            score = 0.95  # Handle edge case where all distances are the same
+            score = 0.95 
         else:
-            norm_dist = (dists[0][j] - min_dist) / (max_dist - min_dist)  # Normalize to [0,1]
-            score = 0.95 - (0.35 * norm_dist)  # Map to [0.60, 0.95]
+            norm_dist = (dists[0][j] - min_dist) / (max_dist - min_dist) 
+            score = 0.95 - (0.35 * norm_dist) 
             
         results.append({"track_name": titles[i], "score": float(f"{score:.4f}")})
         
-        if len(results) >= k:  # Stop once we have enough results
+        if len(results) >= k:  
             break
             
     return results[:k]
